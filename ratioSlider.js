@@ -66,8 +66,8 @@
 
 	    var rslider = {},
 	    el = this,
-	    windowWidth = $(window).width(),
-	    windowHeight = $(window).height();
+	    parentWidth = el.width(),
+	    parentHeight = el.height();
 
 	    // Return if slider is already initialized
 	    if ($(el).data('ratioSlider')) { return; }
@@ -141,13 +141,13 @@
 		    rslider.settings.easing = 'swing';
 		    // make modifications to the viewport (.rslider-viewport)
 		    rslider.viewport.css({
-		        width: windowWidth,
-		        height: windowHeight,
+		        width: parentWidth,
+		        height: parentHeight,
 		        overflow: 'hidden',
 		        position: 'relative'
 		    });
 		    // calculate the ratio of the viewport
-			rslider.viewport.ratio = windowWidth/windowHeight;
+			rslider.viewport.ratio = parentWidth/parentHeight;
 		    // make modification to the wrapper (.rslider-wrapper)
 		    if (!rslider.settings.pager && !rslider.settings.controls) {
 		        rslider.viewport.parent().css({
@@ -311,7 +311,7 @@
 	    	if((obj.data('ratio') < rslider.viewport.ratio) ){
 	    		return 'initial';
 	    	}else{
-	    		return windowWidth;
+	    		return parentWidth;
 	    	}
 	    };
 
@@ -320,7 +320,7 @@
 	     */
 	    var getSlideHeight = function(obj) {
 	    	if(obj.data('ratio') < rslider.viewport.ratio ){
-	    		return windowHeight;
+	    		return parentHeight;
 	    	}else{
 	    		return 'initial';
 	    	}
