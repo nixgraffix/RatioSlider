@@ -12,15 +12,11 @@
     	hideControlOnEnd: false,
 		speed: 500,
 		easing: null,
-		wrapperClass: 'jubal-wrapper',
-
-	    // TOUCH
+		wrapperClass: 'ratioSlider-wrapper',
 
 	    // ACCESSIBILITY
 	    ariaLive: true,
 	    ariaHidden: true,
-
-	    // KEYBOARD
 
 	    // PAGER
 	    pager: true,
@@ -52,11 +48,9 @@
 	    maxSlides: 1,
 	    slideWidth: 0
 
-	    // CALLBACKS
-
 	}
 
-	$.fn.jubalSlider = function(options) {
+	$.fn.ratioSlider = function(options) {
 
 	    if (this.length === 0) {
 	    	return this;
@@ -65,18 +59,18 @@
 	    // support multiple elements
 	    if (this.length > 1) {
 	      this.each(function() {
-	        $(this).jubalSlider(options);
+	        $(this).ratioSlider(options);
 	      });
 	      return this;
 	    }
 
-	    var jubal = {},
+	    var rslider = {},
 	    el = this,
 	    windowWidth = $(window).width(),
 	    windowHeight = $(window).height();
 
 	    // Return if slider is already initialized
-	    if ($(el).data('jubalSlider')) { return; }
+	    if ($(el).data('ratioSlider')) { return; }
 
 	    /**
 	     * ===================================================================================
@@ -91,33 +85,33 @@
 		var init = function() {
 
 			// Return if slider is already initialized
-			if ($(el).data('jubalSlider')) { return; }
+			if ($(el).data('ratioSlider')) { return; }
 			// merge user-supplied options with the defaults
-			jubal.settings = $.extend({}, defaults, options);
+			rslider.settings = $.extend({}, defaults, options);
 	 		// store the original children
-	      	jubal.children = el.children(jubal.settings.slideSelector);
+	      	rslider.children = el.children(rslider.settings.slideSelector);
 	        // check if actual number of slides is less than minSlides / maxSlides
-	        if (jubal.children.length < jubal.settings.minSlides) { jubal.settings.minSlides = jubal.children.length; }
-	        if (jubal.children.length < jubal.settings.maxSlides) { jubal.settings.maxSlides = jubal.children.length; }
+	        if (rslider.children.length < rslider.settings.minSlides) { rslider.settings.minSlides = rslider.children.length; }
+	        if (rslider.children.length < rslider.settings.maxSlides) { rslider.settings.maxSlides = rslider.children.length; }
 	        // store active slide information
-	      	jubal.active = { index: jubal.settings.startSlide };
+	      	rslider.active = { index: rslider.settings.startSlide };
 		    // store if the slider is in carousel mode (displaying / moving multiple slides)
-		    jubal.carousel = jubal.settings.minSlides > 1 || jubal.settings.maxSlides > 1 ? true : false;
+		    rslider.carousel = rslider.settings.minSlides > 1 || rslider.settings.maxSlides > 1 ? true : false;
 	      	// if carousel, force preloadImages = 'all'
-	      	if (jubal.carousel) { jubal.settings.preloadImages = 'all'; }
+	      	if (rslider.carousel) { rslider.settings.preloadImages = 'all'; }
 		    // calculate the min / max width thresholds based on min / max number of slides
 		    // used to setup and update carousel slides dimensions
-		    //jubal.minThreshold = (jubal.settings.minSlides * jubal.settings.slideWidth) + ((jubal.settings.minSlides - 1) * jubal.settings.slideMargin);
-		    //jubal.maxThreshold = (jubal.settings.maxSlides * jubal.settings.slideWidth) + ((jubal.settings.maxSlides - 1) * jubal.settings.slideMargin);
+		    //rslider.minThreshold = (rslider.settings.minSlides * rslider.settings.slideWidth) + ((rslider.settings.minSlides - 1) * rslider.settings.slideMargin);
+		    //rslider.maxThreshold = (rslider.settings.maxSlides * rslider.settings.slideWidth) + ((rslider.settings.maxSlides - 1) * rslider.settings.slideMargin);
 		    // store the current state of the slider (if currently animating, working is true)
-		    jubal.working = false;
+		    rslider.working = false;
 	        // initialize the controls object
-	        jubal.controls = {};
+	        rslider.controls = {};
 	        // initialize an auto interval
-	        jubal.interval = null;	   
+	        rslider.interval = null;	   
 		    // save original style data
 		    el.data('origStyle', el.attr('style'));
-		    el.children(jubal.settings.slideSelector).each(function() {
+		    el.children(rslider.settings.slideSelector).each(function() {
 		      $(this).data('origStyle', $(this).attr('style'));
 		    });
 
@@ -130,82 +124,82 @@
 	    */
 	    var setup = function() {
 
-	    	var preloadSelector = jubal.children.eq(jubal.settings.startSlide); // set the default preload selector (visible)
+	    	var preloadSelector = rslider.children.eq(rslider.settings.startSlide); // set the default preload selector (visible)
 		    
 		    // wrap el in a wrapper
-		    el.wrap('<div class="' + jubal.settings.wrapperClass + '"><div class="jubal-viewport"></div></div>');
-		    // store a namespace reference to .jubal-viewport
-		    jubal.viewport = el.parent();
+		    el.wrap('<div class="' + rslider.settings.wrapperClass + '"><div class="rslider-viewport"></div></div>');
+		    // store a namespace reference to .rslider-viewport
+		    rslider.viewport = el.parent();
 		    // add aria-live if the setting is enabled and ticker mode is disabled
-		    if (jubal.settings.ariaLive && !jubal.settings.ticker) {
-		      jubal.viewport.attr('aria-live', 'polite');
+		    if (rslider.settings.ariaLive && !rslider.settings.ticker) {
+		      rslider.viewport.attr('aria-live', 'polite');
 		    }
 		    // add a loading div to display while images are loading
-		    jubal.loader = $('<div class="jubal-loading" />');
-		    jubal.viewport.prepend(jubal.loader);
+		    rslider.loader = $('<div class="rslider-loading" />');
+		    rslider.viewport.prepend(rslider.loader);
 		    // if no easing value was supplied, use the default JS animation easing (swing)
-		    jubal.settings.easing = 'swing';
-		    // make modifications to the viewport (.jubal-viewport)
-		    jubal.viewport.css({
+		    rslider.settings.easing = 'swing';
+		    // make modifications to the viewport (.rslider-viewport)
+		    rslider.viewport.css({
 		        width: windowWidth,
 		        height: windowHeight,
 		        overflow: 'hidden',
 		        position: 'relative'
 		    });
 		    // calculate the ratio of the viewport
-			jubal.viewport.ratio = windowWidth/windowHeight;
-		    // make modification to the wrapper (.jubal-wrapper)
-		    if (!jubal.settings.pager && !jubal.settings.controls) {
-		        jubal.viewport.parent().css({
+			rslider.viewport.ratio = windowWidth/windowHeight;
+		    // make modification to the wrapper (.rslider-wrapper)
+		    if (!rslider.settings.pager && !rslider.settings.controls) {
+		        rslider.viewport.parent().css({
 		          margin: '0 auto 0px'
 		      });
 		    }
 
 		    /* begin mods */
 		    // set the stage for the images
-	    	el.children().wrapAll('<div class="jubalStage" />');
-		    jubal.stage = $('.jubalStage');
+	    	el.children().wrapAll('<div class="rsliderStage" />');
+		    rslider.stage = $('.rsliderStage');
 
-		    jubal.stage.css({
+		    rslider.stage.css({
 		        position: 'relative'
 		    });
 		    // apply css to all slider children
-		    jubal.children.css({
+		    rslider.children.css({
 		        listStyle: 'none',
 		        position: 'absolute',
 		        top: 0,
 		        left: 0
 		    });
 		    // if "fade" mode, add positioning and z-index CSS
-		    if (jubal.settings.mode === 'fade') {
-		        jubal.children.css({
+		    if (rslider.settings.mode === 'fade') {
+		        rslider.children.css({
 			        position: 'absolute',
 			        zIndex: 0,
 			        display: 'none'
 		        });
 		    }
 		    // create an element to contain all slider controls (pager, start / stop, etc)
-		    jubal.controls.el = $('<div class="jubal-controls" />');
+		    rslider.controls.el = $('<div class="rslider-controls" />');
 		    // if captions are requested, add them
-		    if (jubal.settings.captions) { appendCaptions(); }
+		    if (rslider.settings.captions) { appendCaptions(); }
 		    // check if startSlide is last slide
-		    jubal.active.last = jubal.settings.startSlide === getPagerQty() - 1;
+		    rslider.active.last = rslider.settings.startSlide === getPagerQty() - 1;
 		    // if video is true, set up the fitVids plugin
-		    if (jubal.settings.video) { el.fitVids(); }
-		    if (jubal.settings.preloadImages === 'all' || jubal.settings.ticker) { preloadSelector = jubal.children; }
+		    if (rslider.settings.video) { el.fitVids(); }
+		    if (rslider.settings.preloadImages === 'all' || rslider.settings.ticker) { preloadSelector = rslider.children; }
 		    // only check for control addition if not in "ticker" mode
-		    if (!jubal.settings.ticker) {
+		    if (!rslider.settings.ticker) {
 		        // if controls are requested, add them
-		        if (jubal.settings.controls) { appendControls(); }
+		        if (rslider.settings.controls) { appendControls(); }
 		        // if auto is true, and auto controls are requested, add them
-		        if (jubal.settings.auto && jubal.settings.autoControls) { appendControlsAuto(); }
+		        if (rslider.settings.auto && rslider.settings.autoControls) { appendControlsAuto(); }
 		        // if pager is requested, add it
-		        if (jubal.settings.pager) { appendPager(); }
+		        if (rslider.settings.pager) { appendPager(); }
 		        // if any control option is requested, add the controls wrapper
-		        if (jubal.settings.controls || jubal.settings.autoControls || jubal.settings.pager) { jubal.viewport.after(jubal.controls.el); }
+		        if (rslider.settings.controls || rslider.settings.autoControls || rslider.settings.pager) { rslider.viewport.after(rslider.controls.el); }
 		    // if ticker mode, do not allow a pager
 		    } else {
-		        jubal.settings.pager = false;
+		        rslider.settings.pager = false;
 		    }
 		    loadElements(preloadSelector, start);
 		};
@@ -230,21 +224,21 @@
 	     */
 		var start = function() {
 			// if infinite loop, prepare additional slides
-			if (jubal.settings.infiniteLoop && jubal.settings.mode !== 'fade') {
-				var slice    = jubal.settings.maxSlides,
-				sliceAppend  = jubal.children.slice(0, slice).clone(true).addClass('jubal-clone'),
-				slicePrepend = jubal.children.slice(-slice).clone(true).addClass('jubal-clone');
-				if (jubal.settings.ariaHidden) {
+			if (rslider.settings.infiniteLoop && rslider.settings.mode !== 'fade') {
+				var slice    = rslider.settings.maxSlides,
+				sliceAppend  = rslider.children.slice(0, slice).clone(true).addClass('rslider-clone'),
+				slicePrepend = rslider.children.slice(-slice).clone(true).addClass('rslider-clone');
+				if (rslider.settings.ariaHidden) {
 					sliceAppend.attr('aria-hidden', true);
 					slicePrepend.attr('aria-hidden', true);
 				}
-				//jubal.stage.append(sliceAppend).prepend(slicePrepend);
+				//rslider.stage.append(sliceAppend).prepend(slicePrepend);
 			}
 
 			// store the ratios in each images data attr
 	    	getSlideOriginalRatios();
 		    //now that images have loaded get data and set css to images
-		    jubal.children.each(function(){
+		    rslider.children.each(function(){
 		    	// set the object's data property 'nextSlidePos'
 		    	$(this).data('nextSlidePos', getNextSlidePos($(this)));
 		    	// apply the calculated width (images should be loaded now)
@@ -256,15 +250,15 @@
 		    	});
 		    });
 		    // remove the loading DOM element
-      		jubal.loader.remove();
+      		rslider.loader.remove();
 			// slider has been fully initialized
-			jubal.initialized = true;
+			rslider.initialized = true;
 			// if auto is true and has more than 1 page, start the show
-			if (jubal.settings.auto && jubal.settings.autoStart && (getPagerQty() > 1 || jubal.settings.autoSlideForOnePage)) { initAuto(); }
+			if (rslider.settings.auto && rslider.settings.autoStart && (getPagerQty() > 1 || rslider.settings.autoSlideForOnePage)) { initAuto(); }
 		}
 
 	    var getSlideOriginalRatios = function() {
-	    	jubal.children.each(function(){
+	    	rslider.children.each(function(){
 	    		var tempImg = new Image();
 				tempImg.src = $(this).attr('src');
 				$(this).data('ratio', tempImg.width/tempImg.height);
@@ -275,7 +269,7 @@
 	     * Returns either "right" or "bottom" as the next slide's position
 	     */
 	    var getNextSlidePos = function(obj) {
-	    	if((obj.data('ratio') < jubal.viewport.ratio) ){
+	    	if((obj.data('ratio') < rslider.viewport.ratio) ){
 	    		return 'right';
 	    	}else{
 	    		return 'bottom';
@@ -292,7 +286,7 @@
 	    	if(obj.prev().data('nextSlidePos')==='right'){
 	    		return obj.prev().position().top;
 	    	} else {
-	    		return obj.prev().position().top + obj.prev().height() + jubal.settings.slideMargin;
+	    		return obj.prev().position().top + obj.prev().height() + rslider.settings.slideMargin;
 	    	}
 	    };
 
@@ -304,7 +298,7 @@
 	    		return 0;
 	    	}
 	    	if(obj.prev().data('nextSlidePos')==='right'){
-	    		return obj.prev().position().left + obj.prev().width() + jubal.settings.slideMargin;
+	    		return obj.prev().position().left + obj.prev().width() + rslider.settings.slideMargin;
 	    	} else {
 	    		return obj.prev().position().left;
 	    	}
@@ -314,7 +308,7 @@
 	     * Returns the calculated width to be applied to each slide
 	     */
 	    var getSlideWidth = function(obj) {
-	    	if((obj.data('ratio') < jubal.viewport.ratio) ){
+	    	if((obj.data('ratio') < rslider.viewport.ratio) ){
 	    		return 'initial';
 	    	}else{
 	    		return windowWidth;
@@ -325,7 +319,7 @@
 	     * Returns the calculated height to be applied to each slide
 	     */
 	    var getSlideHeight = function(obj) {
-	    	if(obj.data('ratio') < jubal.viewport.ratio ){
+	    	if(obj.data('ratio') < rslider.viewport.ratio ){
 	    		return windowHeight;
 	    	}else{
 	    		return 'initial';
@@ -349,7 +343,7 @@
 		* Returns the number of pages (one full viewport of slides is one "page")
 		*/
 		var getPagerQty = function() {
-				return jubal.children.length;
+				return rslider.children.length;
 		};
 
 	    /**
@@ -357,8 +351,8 @@
 	     */
 	    var getMoveBy = function() {
 			// if moveSlides was set by the user and moveSlides is less than number of slides showing
-			if (jubal.settings.moveSlides > 0) {
-				return jubal.settings.moveSlides;
+			if (rslider.settings.moveSlides > 0) {
+				return rslider.settings.moveSlides;
 			}
 			// if moveSlides is 0 (auto)
 			return 1;
@@ -382,15 +376,15 @@
 	     */
 	    var setPositionProperty = function(value, type, duration, params) {
 	        animateObj = {};
-	        animateObj[jubal.animProp] = value;
+	        animateObj[rslider.animProp] = value;
 	        
 			// use JS animate
 			if (type === 'slide') {
-				jubal.viewport.animate(animateObj, duration, jubal.settings.easing, function() {
+				rslider.viewport.animate(animateObj, duration, rslider.settings.easing, function() {
 					updateAfterSlideTransition();
 				});
 			} else if (type === 'reset') {
-			  el.css(jubal.animProp, value);
+			  el.css(rslider.animProp, value);
 			}
 	    };
 
@@ -412,27 +406,27 @@
 	     * Appends prev / next controls to the controls element
 	     */
 	    var appendControls = function() {
-	    	jubal.controls.next = $('<a class="jubal-next" href="">' + jubal.settings.nextText + '</a>');
-      		jubal.controls.prev = $('<a class="jubal-prev" href="">' + jubal.settings.prevText + '</a>');
+	    	rslider.controls.next = $('<a class="rslider-next" href="">' + rslider.settings.nextText + '</a>');
+      		rslider.controls.prev = $('<a class="rslider-prev" href="">' + rslider.settings.prevText + '</a>');
 			// bind click actions to the controls
-			jubal.controls.next.bind('click touchend', clickNextBind);
-			jubal.controls.prev.bind('click touchend', clickPrevBind);
+			rslider.controls.next.bind('click touchend', clickNextBind);
+			rslider.controls.prev.bind('click touchend', clickPrevBind);
 			// if nextSelector was supplied, populate it
-			if (jubal.settings.nextSelector) {
-				$(jubal.settings.nextSelector).append(jubal.controls.next);
+			if (rslider.settings.nextSelector) {
+				$(rslider.settings.nextSelector).append(rslider.controls.next);
 			}
 			// if prevSelector was supplied, populate it
-			if (jubal.settings.prevSelector) {
-				$(jubal.settings.prevSelector).append(jubal.controls.prev);
+			if (rslider.settings.prevSelector) {
+				$(rslider.settings.prevSelector).append(rslider.controls.prev);
 			}
 			// if no custom selectors were supplied
-			if (!jubal.settings.nextSelector && !jubal.settings.prevSelector) {
+			if (!rslider.settings.nextSelector && !rslider.settings.prevSelector) {
 				// add the controls to the DOM
-				jubal.controls.directionEl = $('<div class="bx-controls-direction" />');
+				rslider.controls.directionEl = $('<div class="bx-controls-direction" />');
 				// add the control elements to the directionEl
-				jubal.controls.directionEl.append(jubal.controls.prev).append(jubal.controls.next);
+				rslider.controls.directionEl.append(rslider.controls.prev).append(rslider.controls.next);
 				// slider.viewport.append(slider.controls.directionEl);
-				jubal.controls.el.addClass('bx-has-controls-direction').append(jubal.controls.directionEl);
+				rslider.controls.el.addClass('bx-has-controls-direction').append(rslider.controls.directionEl);
 			}
 	    };
 
@@ -444,9 +438,9 @@
 	     */
 	    var clickNextBind = function(e) {
 			e.preventDefault();
-			if (jubal.controls.el.hasClass('disabled')) { return; }
+			if (rslider.controls.el.hasClass('disabled')) { return; }
 			// if auto show is running, stop it
-			if (jubal.settings.auto && jubal.settings.stopAutoOnClick) { el.stopAuto(); }
+			if (rslider.settings.auto && rslider.settings.stopAutoOnClick) { el.stopAuto(); }
 			el.goToNextSlide();
 	    };
 
@@ -458,9 +452,9 @@
 	     */
 	    var clickPrevBind = function(e) {
 			e.preventDefault();
-			if (jubal.controls.el.hasClass('disabled')) { return; }
+			if (rslider.controls.el.hasClass('disabled')) { return; }
 			// if auto show is running, stop it
-			if (jubal.settings.auto && jubal.settings.stopAutoOnClick) { el.stopAuto(); }
+			if (rslider.settings.auto && rslider.settings.stopAutoOnClick) { el.stopAuto(); }
 			el.goToPrevSlide();
 	    };
 
@@ -470,19 +464,19 @@
 		 */
 		var updateAfterSlideTransition = function() {
 			// if infinite loop is true
-			if (jubal.settings.infiniteLoop) {
+			if (rslider.settings.infiniteLoop) {
 				var position = '';
 				// first slide
-				if (jubal.active.index === 0) {
+				if (rslider.active.index === 0) {
 					// set the new position
-					position = jubal.children.eq(0).position();
+					position = rslider.children.eq(0).position();
 				// last slide
-				} else if (jubal.active.index === getPagerQty() - 1) {
-					position = jubal.children.eq(getPagerQty() - 1).position();
+				} else if (rslider.active.index === getPagerQty() - 1) {
+					position = rslider.children.eq(getPagerQty() - 1).position();
 				}
 			}
 			// declare that the transition is complete
-			jubal.working = false;
+			rslider.working = false;
 		};
 
 	    /**
@@ -490,19 +484,19 @@
 	     */
 	    var updateDirectionControls = function() {
 
-			if (!jubal.settings.infiniteLoop && jubal.settings.hideControlOnEnd) {
+			if (!rslider.settings.infiniteLoop && rslider.settings.hideControlOnEnd) {
 				// if first slide
-				if (jubal.active.index === 0) {
-					jubal.controls.prev.addClass('disabled');
-					jubal.controls.next.removeClass('disabled');
+				if (rslider.active.index === 0) {
+					rslider.controls.prev.addClass('disabled');
+					rslider.controls.next.removeClass('disabled');
 				// if last slide
-				} else if (jubal.active.index === getPagerQty()) {
-					jubal.controls.next.addClass('disabled');
-					jubal.controls.prev.removeClass('disabled');
+				} else if (rslider.active.index === getPagerQty()) {
+					rslider.controls.next.addClass('disabled');
+					rslider.controls.prev.removeClass('disabled');
 				// if any slide in the middle
 				} else {
-					jubal.controls.prev.removeClass('disabled');
-					jubal.controls.next.removeClass('disabled');
+					rslider.controls.prev.removeClass('disabled');
+					rslider.controls.next.removeClass('disabled');
 				}
 			}
 	    };
@@ -513,8 +507,8 @@
 		var initAuto = function() {
 			console.log('initAuto');
 			// if autoDelay was supplied, launch the auto show using a setTimeout() call
-			if (jubal.settings.autoDelay > 0) {
-				var timeout = setTimeout(el.startAuto, jubal.settings.autoDelay);
+			if (rslider.settings.autoDelay > 0) {
+				var timeout = setTimeout(el.startAuto, rslider.settings.autoDelay);
 				// if autoDelay was not supplied, start the auto show normally
 			} else {
 				el.startAuto();
@@ -526,23 +520,23 @@
 				});
 			}
 			// if autoHover is requested
-			if (jubal.settings.autoHover) {
+			if (rslider.settings.autoHover) {
 				// on el hover
 				el.hover(function() {
 					// if the auto show is currently playing (has an active interval)
-					if (jubal.interval) {
+					if (rslider.interval) {
 						// stop the auto show and pass true argument which will prevent control update
 						el.stopAuto(true);
 						// create a new autoPaused value which will be used by the relative "mouseout" event
-						jubal.autoPaused = true;
+						rslider.autoPaused = true;
 					}
 				}, function() {
 					// if the autoPaused value was created be the prior "mouseover" event
-					if (jubal.autoPaused) {
+					if (rslider.autoPaused) {
 						// start the auto show and pass true argument which will prevent control update
 						el.startAuto(true);
 						// reset the autoPaused value
-						jubal.autoPaused = null;
+						rslider.autoPaused = null;
 					}
 				});
 			}
@@ -557,11 +551,11 @@
 		var applyAriaHiddenAttributes = function(startVisibleIndex) {
 			var numberOfSlidesShowing = getNumberSlidesShowing();
 			// only apply attributes if the setting is enabled and not in ticker mode
-			if (jubal.settings.ariaHidden && !jubal.settings.ticker) {
+			if (rslider.settings.ariaHidden && !rslider.settings.ticker) {
 				// add aria-hidden=true to all elements
-				jubal.children.attr('aria-hidden', 'true');
+				rslider.children.attr('aria-hidden', 'true');
 				// get the visible elements and change to aria-hidden=false
-				jubal.children.slice(startVisibleIndex, startVisibleIndex + numberOfSlidesShowing).attr('aria-hidden', 'false');
+				rslider.children.slice(startVisibleIndex, startVisibleIndex + numberOfSlidesShowing).attr('aria-hidden', 'false');
 			}
 		};
 
@@ -573,7 +567,7 @@
 	     */
 	    var setSlideIndex = function(slideIndex) {
 	        if (slideIndex < 0) {
-		    	return jubal.active.index;
+		    	return rslider.active.index;
 		    // set active index to requested slide
 		    } else {
 		    	return slideIndex;
@@ -604,17 +598,17 @@
 			lastChild = null,
 			lastShowingIndex, eq, value, requestEl, prevDirection;
 			// if plugin is currently in motion, ignore request
-			if (jubal.working || jubal.active.index === jubal.oldIndex) { console.log(jubal.working); return; }
+			if (rslider.working || rslider.active.index === rslider.oldIndex) { console.log(rslider.working); return; }
 			// store the old index
-			jubal.oldIndex = jubal.active.index;
+			rslider.oldIndex = rslider.active.index;
 			//set new index
-			jubal.active.index = setSlideIndex(slideIndex);
+			rslider.active.index = setSlideIndex(slideIndex);
 			// declare that plugin is in motion
 			console.log('stepping');
-			jubal.working = true;
+			rslider.working = true;
 			/* handling callbacks - commented for now because not handleing 
 
-			performTransition = jubal.settings.onSlideBefore.call(el, slider.children.eq(slider.active.index), slider.oldIndex, slider.active.index);
+			performTransition = rslider.settings.onSlideBefore.call(el, slider.children.eq(slider.active.index), slider.oldIndex, slider.active.index);
 
 			// If transitions canceled, reset and return
 			if (typeof (performTransition) !== 'undefined' && !performTransition) {
@@ -637,49 +631,49 @@
 			*/
 
 			// check if last slide
-			jubal.active.last = jubal.active.index >= getPagerQty() - 1;
+			rslider.active.last = rslider.active.index >= getPagerQty() - 1;
 			// // check for direction control update
-			if (jubal.settings.controls) { updateDirectionControls(); }
+			if (rslider.settings.controls) { updateDirectionControls(); }
 
 				/* animation starts here */
 
 			// if slider is set to mode: "fade"
-			if (jubal.settings.mode === 'fade') {
+			if (rslider.settings.mode === 'fade') {
 
 				// fade out the visible child and reset its z-index value
-				jubal.children.filter(':visible').fadeOut(jubal.settings.speed).css({zIndex: 0});
+				rslider.children.filter(':visible').fadeOut(rslider.settings.speed).css({zIndex: 0});
 				// fade in the newly requested slide
-				jubal.children.eq(jubal.active.index).css('zIndex', jubal.settings.slideZIndex + 1).fadeIn(jubal.settings.speed, function() {
-				  $(this).css('zIndex', jubal.settings.slideZIndex);
+				rslider.children.eq(rslider.active.index).css('zIndex', rslider.settings.slideZIndex + 1).fadeIn(rslider.settings.speed, function() {
+				  $(this).css('zIndex', rslider.settings.slideZIndex);
 				  updateAfterSlideTransition();
 				});
 			// slider mode is not "fade"
 			} else {
 				// if carousel and not infinite loop
-				if (!jubal.settings.infiniteLoop && jubal.carousel && jubal.active.last) {
+				if (!rslider.settings.infiniteLoop && rslider.carousel && rslider.active.last) {
 					// currently not supported
 				// horizontal carousel, going previous while on first slide (infiniteLoop mode)
-				} else if (jubal.carousel && jubal.active.last && direction === 'prev') {
+				} else if (rslider.carousel && rslider.active.last && direction === 'prev') {
 					// get the last child position
-					eq = jubal.settings.moveSlides === 1 ? jubal.settings.maxSlides - getMoveBy() : ((getPagerQty() - 1) * getMoveBy()) - (jubal.children.length - jubal.settings.maxSlides);
+					eq = rslider.settings.moveSlides === 1 ? rslider.settings.maxSlides - getMoveBy() : ((getPagerQty() - 1) * getMoveBy()) - (rslider.children.length - rslider.settings.maxSlides);
 					lastChild = el.children('.bx-clone').eq(eq);
 					position = lastChild.position();
 				// if infinite loop and "Next" is clicked on the last slide
-				} else if (direction === 'next' && jubal.active.index === 0) {
+				} else if (direction === 'next' && rslider.active.index === 0) {
 					// get the last clone position
-					position = el.find('> .bx-clone').eq(jubal.settings.maxSlides).position();
-					jubal.active.last = false;
+					position = el.find('> .bx-clone').eq(rslider.settings.maxSlides).position();
+					rslider.active.last = false;
         		// normal non-zero requests
 				} else if (slideIndex >= 0) {
-					console.log(jubal.active.last);
-					prevDirection = direction === 'prev' ? jubal.children.eq(jubal.oldIndex -1).data('nextSlidePos') : jubal.children.eq(jubal.oldIndex).data('nextSlidePos');
+					console.log(rslider.active.last);
+					prevDirection = direction === 'prev' ? rslider.children.eq(rslider.oldIndex -1).data('nextSlidePos') : rslider.children.eq(rslider.oldIndex).data('nextSlidePos');
 				 	console.log(prevDirection);
 				 	if(prevDirection === 'right'){
-				 		jubal.animProp = 'scrollLeft';
-				 		position = jubal.children.eq(jubal.active.index).position().left;
+				 		rslider.animProp = 'scrollLeft';
+				 		position = rslider.children.eq(rslider.active.index).position().left;
 				 	}else{
-				 		jubal.animProp = 'scrollTop';
-				 		position = jubal.children.eq(jubal.active.index).position().top;
+				 		rslider.animProp = 'scrollTop';
+				 		position = rslider.children.eq(rslider.active.index).position().top;
 				 	}
 				}
 				/* If the position doesn't exist
@@ -688,12 +682,12 @@
 				 */
 				if (typeof (position) !== 'undefined') {
 				  // plugin values to be animated
-				  setPositionProperty(position, 'slide', jubal.settings.speed);
+				  setPositionProperty(position, 'slide', rslider.settings.speed);
 				} else {
-				  jubal.working = false;
+				  rslider.working = false;
 				}
 			}
-			if (jubal.settings.ariaHidden) { applyAriaHiddenAttributes(jubal.active.index * getMoveBy()); }
+			if (rslider.settings.ariaHidden) { applyAriaHiddenAttributes(rslider.active.index * getMoveBy()); }
 	    };
 
 	    /**
@@ -701,8 +695,8 @@
 	     */
 	    el.goToNextSlide = function() {
 			// if infiniteLoop is false and last page is showing, disregard call
-			if (!jubal.settings.infiniteLoop && jubal.active.last) { return; }
-			var pagerIndex = parseInt(jubal.active.index) + 1;
+			if (!rslider.settings.infiniteLoop && rslider.active.last) { return; }
+			var pagerIndex = parseInt(rslider.active.index) + 1;
 			el.goToSlide(pagerIndex, 'next');
 	    };
 
@@ -711,8 +705,8 @@
 	     */
 	    el.goToPrevSlide = function() {
 			// if infiniteLoop is false and last page is showing, disregard call
-			if (!jubal.settings.infiniteLoop && jubal.active.index === 0) { return; }
-			var pagerIndex = parseInt(jubal.active.index) - 1;
+			if (!rslider.settings.infiniteLoop && rslider.active.index === 0) { return; }
+			var pagerIndex = parseInt(rslider.active.index) - 1;
 			el.goToSlide(pagerIndex, 'prev');
 	    };
 
@@ -724,17 +718,17 @@
 		 */
 		el.startAuto = function(preventControlUpdate) {
 			// if an interval already exists, disregard call
-			if (jubal.interval) { return; }
+			if (rslider.interval) { return; }
 			// create an interval
-			jubal.interval = setInterval(function() {
-				if (jubal.settings.autoDirection === 'next') {
+			rslider.interval = setInterval(function() {
+				if (rslider.settings.autoDirection === 'next') {
 					el.goToNextSlide();
 				} else {
 					el.goToPrevSlide();
 				}
-			}, jubal.settings.pause);
+			}, rslider.settings.pause);
 			// if auto controls are displayed and preventControlUpdate is not true
-			if (jubal.settings.autoControls && preventControlUpdate !== true) { updateAutoControls('stop'); }
+			if (rslider.settings.autoControls && preventControlUpdate !== true) { updateAutoControls('stop'); }
 		};
 
 		/**
@@ -745,17 +739,17 @@
 		 */
 		el.stopAuto = function(preventControlUpdate) {
 			// if no interval exists, disregard call
-			if (!jubal.interval) { return; }
+			if (!rslider.interval) { return; }
 			// clear the interval
-			clearInterval(jubal.interval);
-			jubal.interval = null;
+			clearInterval(rslider.interval);
+			rslider.interval = null;
 			// if auto controls are displayed and preventControlUpdate is not true
-			if (jubal.settings.autoControls && preventControlUpdate !== true) { updateAutoControls('start'); }
+			if (rslider.settings.autoControls && preventControlUpdate !== true) { updateAutoControls('start'); }
 		};
 
 		init();
 
-		$(el).data('jubalSlider', this);
+		$(el).data('ratioSlider', this);
 
 		return this;
 
