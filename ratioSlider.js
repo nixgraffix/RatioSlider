@@ -170,14 +170,6 @@
 		        top: 0,
 		        left: 0
 		    });
-		    // if "fade" mode, add positioning and z-index CSS
-		    if (rslider.settings.mode === 'fade') {
-		        rslider.children.css({
-			        position: 'absolute',
-			        zIndex: 0,
-			        display: 'none'
-		        });
-		    }
 		    // create an element to contain all slider controls (pager, start / stop, etc)
 		    rslider.controls.el = $('<div class="rslider-controls" />');
 		    // if captions are requested, add them
@@ -211,10 +203,12 @@
 
 		    selector.each(function() {
 		        $(this).one('load error', function() {
-
 		          if (++count === total) {callback(); }
 		        }).each(function() {
-		          if (this.complete) { $(this).trigger('load'); }
+		          if (this.complete) { 
+					  $(this).trigger('load'); 
+					  $(this).data('ratio', this.width/this.height);
+					}
 		        });
 		    });
 		};
@@ -236,7 +230,7 @@
 			}
 
 			// store the ratios in each images data attr
-	    	getSlideOriginalRatios();
+	    	//getSlideOriginalRatios();
 		    //now that images have loaded get data and set css to images
 		    rslider.children.each(function(){
 		    	// set the object's data property 'nextSlidePos'
@@ -256,14 +250,6 @@
 			// if auto is true and has more than 1 page, start the show
 			if (rslider.settings.auto && rslider.settings.autoStart && (getPagerQty() > 1 || rslider.settings.autoSlideForOnePage)) { initAuto(); }
 		}
-
-	    var getSlideOriginalRatios = function() {
-	    	rslider.children.each(function(){
-	    		var tempImg = new Image();
-				tempImg.src = $(this).attr('src');
-				$(this).data('ratio', tempImg.width/tempImg.height);
-			});
-	    }
 
 	    /**
 	     * Returns either "right" or "bottom" as the next slide's position
@@ -505,7 +491,6 @@
 		 * Initializes the auto process
 		 */
 		var initAuto = function() {
-			console.log('initAuto');
 			// if autoDelay was supplied, launch the auto show using a setTimeout() call
 			if (rslider.settings.autoDelay > 0) {
 				var timeout = setTimeout(el.startAuto, rslider.settings.autoDelay);
@@ -598,95 +583,55 @@
 			lastChild = null,
 			lastShowingIndex, eq, value, requestEl, prevDirection;
 			// if plugin is currently in motion, ignore request
-			if (rslider.working || rslider.active.index === rslider.oldIndex) { console.log(rslider.working); return; }
+			if (rslider.working || rslider.active.index === rslider.oldIndex) { return; }
 			// store the old index
 			rslider.oldIndex = rslider.active.index;
 			//set new index
 			rslider.active.index = setSlideIndex(slideIndex);
 			// declare that plugin is in motion
-			console.log('stepping');
 			rslider.working = true;
-			/* handling callbacks - commented for now because not handleing 
-
-			performTransition = rslider.settings.onSlideBefore.call(el, slider.children.eq(slider.active.index), slider.oldIndex, slider.active.index);
-
-			// If transitions canceled, reset and return
-			if (typeof (performTransition) !== 'undefined' && !performTransition) {
-			slider.active.index = slider.oldIndex; // restore old index
-			slider.working = false; // is not in motion
-			return;
-			}
-
-			if (direction === 'next') {
-			// Prevent canceling in future functions or lack there-of from negating previous commands to cancel
-			if (!slider.settings.onSlideNext.call(el, slider.children.eq(slider.active.index), slider.oldIndex, slider.active.index)) {
-			  performTransition = false;
-			}
-			} else if (direction === 'prev') {
-			// Prevent canceling in future functions or lack there-of from negating previous commands to cancel
-			if (!slider.settings.onSlidePrev.call(el, slider.children.eq(slider.active.index), slider.oldIndex, slider.active.index)) {
-			  performTransition = false;
-			}
-			}
-			*/
 
 			// check if last slide
 			rslider.active.last = rslider.active.index >= getPagerQty() - 1;
 			// // check for direction control update
 			if (rslider.settings.controls) { updateDirectionControls(); }
 
-				/* animation starts here */
-
-			// if slider is set to mode: "fade"
-			if (rslider.settings.mode === 'fade') {
-
-				// fade out the visible child and reset its z-index value
-				rslider.children.filter(':visible').fadeOut(rslider.settings.speed).css({zIndex: 0});
-				// fade in the newly requested slide
-				rslider.children.eq(rslider.active.index).css('zIndex', rslider.settings.slideZIndex + 1).fadeIn(rslider.settings.speed, function() {
-				  $(this).css('zIndex', rslider.settings.slideZIndex);
-				  updateAfterSlideTransition();
-				});
-			// slider mode is not "fade"
-			} else {
-				// if carousel and not infinite loop
-				if (!rslider.settings.infiniteLoop && rslider.carousel && rslider.active.last) {
-					// currently not supported
-				// horizontal carousel, going previous while on first slide (infiniteLoop mode)
-				} else if (rslider.carousel && rslider.active.last && direction === 'prev') {
-					// get the last child position
-					eq = rslider.settings.moveSlides === 1 ? rslider.settings.maxSlides - getMoveBy() : ((getPagerQty() - 1) * getMoveBy()) - (rslider.children.length - rslider.settings.maxSlides);
-					lastChild = el.children('.bx-clone').eq(eq);
-					position = lastChild.position();
-				// if infinite loop and "Next" is clicked on the last slide
-				} else if (direction === 'next' && rslider.active.index === 0) {
-					// get the last clone position
-					position = el.find('> .bx-clone').eq(rslider.settings.maxSlides).position();
-					rslider.active.last = false;
-        		// normal non-zero requests
-				} else if (slideIndex >= 0) {
-					console.log(rslider.active.last);
-					prevDirection = direction === 'prev' ? rslider.children.eq(rslider.oldIndex -1).data('nextSlidePos') : rslider.children.eq(rslider.oldIndex).data('nextSlidePos');
-				 	console.log(prevDirection);
-				 	if(prevDirection === 'right'){
-				 		rslider.animProp = 'scrollLeft';
-				 		position = rslider.children.eq(rslider.active.index).position().left;
-				 	}else{
-				 		rslider.animProp = 'scrollTop';
-				 		position = rslider.children.eq(rslider.active.index).position().top;
-				 	}
-				}
-				/* If the position doesn't exist
-				 * (e.g. if you destroy the slider on a next click),
-				 * it doesn't throw an error.
-				 */
-				if (typeof (position) !== 'undefined') {
-				  // plugin values to be animated
-				  setPositionProperty(position, 'slide', rslider.settings.speed);
-				} else {
-				  rslider.working = false;
+			/* animation starts here */
+			// if carousel and not infinite loop
+			if (!rslider.settings.infiniteLoop && rslider.carousel && rslider.active.last) {
+			// horizontal carousel, going previous while on first slide (infiniteLoop mode)
+			} else if (rslider.carousel && rslider.active.last && direction === 'prev') {
+				// get the last child position
+				eq = rslider.settings.moveSlides === 1 ? rslider.settings.maxSlides - getMoveBy() : ((getPagerQty() - 1) * getMoveBy()) - (rslider.children.length - rslider.settings.maxSlides);
+				lastChild = el.children('.bx-clone').eq(eq);
+				position = lastChild.position();
+			// if infinite loop and "Next" is clicked on the last slide
+			} else if (direction === 'next' && rslider.active.index === 0) {
+				// get the last clone position
+				position = el.find('> .bx-clone').eq(rslider.settings.maxSlides).position();
+				rslider.active.last = false;
+			// normal non-zero requests
+			} else if (slideIndex >= 0) {
+				prevDirection = direction === 'prev' ? rslider.children.eq(rslider.oldIndex -1).data('nextSlidePos') : rslider.children.eq(rslider.oldIndex).data('nextSlidePos');
+				if(prevDirection === 'right'){
+					rslider.animProp = 'scrollLeft';
+					position = rslider.children.eq(rslider.active.index).position().left;
+				}else{
+					rslider.animProp = 'scrollTop';
+					position = rslider.children.eq(rslider.active.index).position().top;
 				}
 			}
+			/* If the position doesn't exist
+				* (e.g. if you destroy the slider on a next click),
+				* it doesn't throw an error.
+				*/
+			if (typeof (position) !== 'undefined') {
+				// plugin values to be animated
+				setPositionProperty(position, 'slide', rslider.settings.speed);
+			} else {
+				rslider.working = false;
+			}
+			
 			if (rslider.settings.ariaHidden) { applyAriaHiddenAttributes(rslider.active.index * getMoveBy()); }
 	    };
 
