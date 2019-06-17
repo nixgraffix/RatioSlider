@@ -4,4 +4,4 @@ A jquery slider plugin that moves up or down depending on the ratio of each imag
 
 To view the example in different variations, resize the browser window and refresh the page
 
-demo: http://www.artofwineandfood.org/nbmaa4/
+demo: http://nixgraffix.com/ratio_slider
